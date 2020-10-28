@@ -1,5 +1,6 @@
 import random
 import typing as tp
+import math
 
 import a as a
 
@@ -50,8 +51,18 @@ def multiplicative_inverse(e: int, phi: int) -> int:
     >>> multiplicative_inverse(7, 40)
     23
     """
-    # PUT YOUR CODE HERE
-    pass
+    divs = []
+    saved_phi = phi
+    while phi % e != 0:
+        divs.append(phi // e)
+        phi, e = e, phi % e
+    x = 0
+    y = 1
+    for div_val in divs[::-1]:
+        y_temp = y
+        y = x - y * div_val
+        x = y_temp
+    return y % saved_phi
 
 
 def generate_keypair(p: int, q: int) -> tp.Tuple[tp.Tuple[int, int], tp.Tuple[int, int]]:
