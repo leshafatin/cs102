@@ -15,10 +15,14 @@ def is_prime(n: int) -> bool:
     >>> is_prime(8)
     False
     """
-    d = 2
-    while d * d <= n and n % d != 0:
-        d += 1
-    return d * d > n
+    if n == 1:
+        return False
+    if n == 2:
+        return True
+    for i in range(2, math.floor(math.sqrt(n)) + 1):
+        if n % i == 0:
+            return False
+    return True
 
 
 def gcd(a: int, b: int) -> int:
