@@ -13,15 +13,12 @@ def encrypt_vigenere(plaintext: str, keyword: str) -> str:
     alphabet = 'abcdefghijklmnopqrstuvwxyz'
     up_alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     for indx, ch in enumerate(plaintext):
-        if ch.isalpha():
-            if ch.islower():
-                ciphertext += alphabet[
+        if ch.islower():
+            ciphertext += alphabet[
                     (alphabet.index(ch) + alphabet.index(keyword[indx % len(keyword)])) % len(alphabet)]
-            else:
-                ciphertext += up_alphabet[
-                    (up_alphabet.index(ch) + up_alphabet.index(keyword[indx % len(keyword)])) % len(up_alphabet)]
         else:
-            ciphertext += ch
+            ciphertext += up_alphabet[
+                    (up_alphabet.index(ch) + up_alphabet.index(keyword[indx % len(keyword)])) % len(up_alphabet)]
 
     return ciphertext
 
