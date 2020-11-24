@@ -1,5 +1,5 @@
 from typing import Tuple, List, Set, Optional
-
+import multiprocessing, time, random
 
 def read_sudoku(filename: str) -> List[List[str]]:
     """ Прочитать Судоку из указанного файла """
@@ -22,13 +22,15 @@ def display(grid: List[List[str]]) -> None:
 def group(values: List[str], n: int) -> List[List[str]]:
     """
     Сгруппировать значения values в список, состоящий из списков по n элементов
-
     >>> group([1,2,3,4], 2)
     [[1, 2], [3, 4]]
     >>> group([1,2,3,4,5,6,7,8,9], 3)
     [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
     """
-    pass
+    return [values[n * k:n * (k + 1)] for k in range(n)]
+
+
+
 
 
 def get_row(grid: List[List[str]], pos: Tuple[int, int]) -> List[str]:
@@ -41,7 +43,7 @@ def get_row(grid: List[List[str]], pos: Tuple[int, int]) -> List[str]:
     >>> get_row([['1', '2', '3'], ['4', '5', '6'], ['.', '8', '9']], (2, 0))
     ['.', '8', '9']
     """
-    pass
+    return grid[pos[0]]
 
 
 def get_col(grid: List[List[str]], pos: Tuple[int, int]) -> List[str]:
@@ -54,7 +56,7 @@ def get_col(grid: List[List[str]], pos: Tuple[int, int]) -> List[str]:
     >>> get_col([['1', '2', '3'], ['4', '5', '6'], ['.', '8', '9']], (0, 2))
     ['3', '6', '9']
     """
-    pass
+    return [ grid[k][pos[1]] for k in range(len(grid)) ]
 
 
 def get_block(grid: List[List[str]], pos: Tuple[int, int]) -> List[str]:
@@ -68,7 +70,14 @@ def get_block(grid: List[List[str]], pos: Tuple[int, int]) -> List[str]:
     >>> get_block(grid, (8, 8))
     ['2', '8', '.', '.', '.', '5', '.', '7', '9']
     """
-    pass
+    square_x = pos[0]//3
+    square_y = pos[1]//3
+    list = [ ]
+    k = 3
+    for i in range(square_x*k, square_x*k+k):
+        for j in range(square_y*k, square_y*k+k):
+            list.append(grid[i][j])
+    return list
 
 
 def find_empty_positions(grid: List[List[str]]) -> Optional[Tuple[int, int]]:
@@ -81,8 +90,13 @@ def find_empty_positions(grid: List[List[str]]) -> Optional[Tuple[int, int]]:
     >>> find_empty_positions([['1', '2', '3'], ['4', '5', '6'], ['.', '8', '9']])
     (2, 0)
     """
-    pass
-
+    pos=''
+    for i in range(len(grid)):
+        for j in range(len(grid[i])):
+            if grid[i][j] == '.':
+                pos = (i,j)
+                break
+    return pos
 
 def find_possible_values(grid: List[List[str]], pos: Tuple[int, int]) -> Set[str]:
     """ Вернуть множество возможных значения для указанной позиции
@@ -95,7 +109,17 @@ def find_possible_values(grid: List[List[str]], pos: Tuple[int, int]) -> Set[str
     >>> values == {'2', '5', '9'}
     True
     """
-    pass
+    a = set(get_row(grid,pos))
+    b = set(get_col(grid,pos))
+    c = set(get_block(grid,pos))
+
+    numbers = {str(i) for i in range(1,10)}
+    numbers = numbers.difference(a)
+    numbers = numbers.difference(b)
+    numbers = numbers.difference(c)
+
+    return numbers
+
 
 
 def solve(grid: List[List[str]]) -> Optional[List[List[str]]]:
@@ -111,13 +135,42 @@ def solve(grid: List[List[str]]) -> Optional[List[List[str]]]:
     >>> solve(grid)
     [['5', '3', '4', '6', '7', '8', '9', '1', '2'], ['6', '7', '2', '1', '9', '5', '3', '4', '8'], ['1', '9', '8', '3', '4', '2', '5', '6', '7'], ['8', '5', '9', '7', '6', '1', '4', '2', '3'], ['4', '2', '6', '8', '5', '3', '7', '9', '1'], ['7', '1', '3', '9', '2', '4', '8', '5', '6'], ['9', '6', '1', '5', '3', '7', '2', '8', '4'], ['2', '8', '7', '4', '1', '9', '6', '3', '5'], ['3', '4', '5', '2', '8', '6', '1', '7', '9']]
     """
-    pass
+    empty_pos = find_empty_positions(grid)
+
+    if not empty_pos:
+        return grid
+
+    possible_num = find_possible_values(grid, empty_pos)
+    possible_num = list(possible_num)
+    for num in possible_num:
+        grid[empty_pos[0]][empty_pos[1]] = num
+        if solve(grid):
+            return grid
+        else:
+            grid[empty_pos[0]][empty_pos[1]] = '.'
+
+
 
 
 def check_solution(solution: List[List[str]]) -> bool:
     """ Если решение solution верно, то вернуть True, в противном случае False """
     # TODO: Add doctests with bad puzzles
-    pass
+    for i in range(len(solution)):
+        for j in range(len(solution[i])):
+            block = get_block(solution, (i,j))
+            for k in range(9):
+                if block.count(k) > 1:
+                    return False
+        row = get_row(solution, (i,0))
+        col = get_col(solution, (0,i))
+        if row.count('.')>0 or col.count('.')>0:
+            return False
+
+        for m in range(1,10):
+            if row.count(str(m))>1 or col.count(str(m))>1:
+                return False
+
+    return True
 
 
 def generate_sudoku(N: int) -> List[List[str]]:
@@ -142,15 +195,39 @@ def generate_sudoku(N: int) -> List[List[str]]:
     >>> check_solution(solution)
     True
     """
-    pass
+    grid = [[str(((i * 3 + i // 3 + j) % 9 + 1)) for j in range(9)] for i in range(9)]
+    for i in range(50):
+        n1 = random.randrange(0, 9, 1)
+        n2 = random.randrange(0, 9, 1)
+        while (n1 == n2):
+            n2 = random.randrange(0, 9, 1)
+
+        for j in range(9):
+            grid[n1][j], grid[n2][j] = grid[n2][j],grid[n1][j]
+
+        for j in range(9):
+            grid[j][n1], grid[j][n2] = grid[j][n2], grid[j][n1]
+
+        if N < 81:
+            while sum(1 for row in grid for e in row if e == '.') != (81 - N):
+                grid[random.randint(0, 8)][random.randint(0, 8)] = '.'
+
+        return grid
+
+
+
+
+def run_solve(filename: str) -> None:
+    grid = read_sudoku(filename)
+    start = time.time()
+    display(grid)
+    solution = solve(grid)
+    end = time.time()
+    display(solution)
+    print(f"{filename}: {end - start}")
 
 
 if __name__ == '__main__':
-    for fname in ['puzzle1.txt', 'puzzle2.txt', 'puzzle3.txt']:
-        grid = read_sudoku(fname)
-        display(grid)
-        solution = solve(grid)
-        if not solution:
-            print(f"Puzzle {fname} can't be solved")
-        else:
-            display(solution)
+    for filename in ['puzzle1.txt', 'puzzle2.txt', 'puzzle3.txt']:
+        p = multiprocessing.Process(target=run_solve, args=(filename,))
+        p.start()
