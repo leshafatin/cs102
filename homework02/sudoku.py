@@ -196,17 +196,23 @@ def generate_sudoku(N: int) -> List[List[str]]:
     """
     grid = [[str(((i * 3 + i // 3 + j) % 9 + 1)) for j in range(9)] for i in range(9)]
 
-    for i in range(20):
-        n1 = random.randrange(0, 9, 1)
-        n2 = random.randrange(0, 9, 1)
-        while (n1 == n2):
-            n2 = random.randrange(0, 9, 1)
+    for i in range(10):
+        area = random.randrange(0,3,1)
+        line1 = random.randrange(0,3,1)
+        n1 = area * 3 + line1
+
+        line2 = random.randrange(0,3,1)
+        while line1 == line2:
+            line2 = random.randrange(0,3,1)
+
+        n2 = area * 3 + line2
 
         for j in range(9):
-            grid[n1][j], grid[n2][j] = grid[n2][j], grid[n1][j]
-
+            grid[n1][j],grid[n2][j] = grid[n2][j],grid[n1][j]
         for j in range(9):
-            grid[j][n1], grid[j][n2] = grid[j][n2], grid[j][n1]
+            grid[j][n1],grid[j][n2] = grid[j][n2],grid[j][n1]
+
+
 
     if N < 81:
         while sum(1 for row in grid for e in row if e == '.') != (81 - N):
